@@ -48,7 +48,10 @@ make sn-test API_KEY=$(make -s tf-api-key)   # /v1/uploads を疎通
 `lambda.zip` は zip ルートに `handlers/ services/ common/` が並ぶ。
 Lambda ハンドラは `handlers.api.lambda_handler` / `handlers.worker.lambda_handler`。
 
-## C1 の範囲
+## 実装範囲
 
-Worker はダミー（入力 Excel を出力キーへ素通りコピーし completed）。
-C2 で openpyxl 解析・追記、C3 で RAG + Bedrock 評価を実装する。
+- **C1（済）**: REST + presigned + ジョブ管理。
+- **C2（済）**: Worker が openpyxl で Q&A 抽出 → AI 列（判定/返答案/根拠/参照/信頼度）を右側に追記して書き戻し。
+  - `services/excel_io.py`: ヘッダ別名での列特定・空行スキップ・追記。
+  - `services/reviewer.py`: `review_answer()` は **C2 スタブ**（全件「要確認」）。インターフェースは C3 でも維持。
+- **C3（次）**: `reviewer.review_answer` を RAG（fulltext）+ Bedrock（Claude）で実装。

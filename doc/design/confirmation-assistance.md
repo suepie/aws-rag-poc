@@ -119,13 +119,15 @@ Bedrock からは JSON のみを返させ、postprocess で検証する。
 
 ## 7. 段階実装
 
-| ステップ | 内容 |
-|---|---|
-| C1 | REST I/F + S3 presigned + ジョブ管理（DynamoDB）+ ダミー Worker（Excel 素通り） |
-| C2 | Excel 解析（openpyxl）+ Q&A 抽出 + 追記書き戻し |
-| C3 | RAG retrieve（まず fulltext）+ Bedrock 評価 + 出力スキーマ |
-| C4 | PII フィルタ・進捗・サマリー・エラー処理 |
-| C5 | retrieval 戦略切替（Bedrock KB / corpus2skill）対応 |
+| ステップ | 内容 | 状態 |
+|---|---|---|
+| C1 | REST I/F + S3 presigned + ジョブ管理（DynamoDB）+ ダミー Worker（Excel 素通り） | ✅ 実装済 |
+| C2 | Excel 解析（openpyxl）+ Q&A 抽出 + 判定列の追記書き戻し（判定は reviewer スタブ） | ✅ 実装済 |
+| C3 | RAG retrieve（まず fulltext）+ Bedrock 評価 + 出力スキーマ（reviewer 差し替え） | 次 |
+| C4 | PII フィルタ・進捗・サマリー・エラー処理 | — |
+| C5 | retrieval 戦略切替（Bedrock KB / corpus2skill）対応 | — |
+
+> **C2 の実装メモ**: Excel 入出力は [`backend/src/services/excel_io.py`](../../backend/src/services/excel_io.py)（ヘッダ別名での列特定・空行スキップ・右側への AI 列追記）。判定は [`backend/src/services/reviewer.py`](../../backend/src/services/reviewer.py) の `review_answer()`（C2 はスタブ、C3 で RAG + Bedrock に差し替え。**インターフェースは維持**）。見本出力: [`doc/samples/sample-application-reviewed.xlsx`](../samples/sample-application-reviewed.xlsx)。
 
 ## 8. 関連
 

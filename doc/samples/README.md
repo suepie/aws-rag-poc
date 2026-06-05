@@ -4,8 +4,9 @@
 
 ## ファイル
 
-- [sample-application.xlsx](sample-application.xlsx) — 回答済みの申請書見本（確認支援の入力）
-- 生成スクリプト: [`scripts/make-sample-excel.py`](../../scripts/make-sample-excel.py)（`python3 scripts/make-sample-excel.py` で再生成）
+- [sample-application.xlsx](sample-application.xlsx) — 回答済みの申請書見本（確認支援の**入力**）
+- [sample-application-reviewed.xlsx](sample-application-reviewed.xlsx) — C2 の Worker が AI 列を追記した**出力**見本（判定は C2 スタブ）
+- 生成スクリプト: [`scripts/make-sample-excel.py`](../../scripts/make-sample-excel.py)（`python3 scripts/make-sample-excel.py` で入力を再生成）
 
 ## フォーマット規約（入力）
 
@@ -40,5 +41,5 @@
 | `AI参照` | 参照した参考情報/過去事例のタイトル |
 | `AI信頼度` | high / medium / low |
 
-> C1（現在）の Worker はダミーで、入力 Excel をそのまま返す（素通り）。
-> 追記は C2（Excel 解析）+ C3（RAG + Bedrock 評価）で実装する。
+> C2（現在）の Worker は Excel を解析して上記 AI 列を追記する（往復確立）。
+> ただし判定値は reviewer スタブ（全件「要確認」）。実判定は C3（RAG + Bedrock）で実装する。

@@ -1,15 +1,15 @@
-"""Worker Lambda — 確認支援ジョブの実処理（C1: ダミー）。
+"""Worker Lambda — 確認支援ジョブの実処理。
 
-C1 ではダミー実装。入力 Excel をそのまま出力キーにコピーし、
-ジョブを completed にする（Excel 素通り）。
-
-C2 以降で openpyxl による Q&A 抽出、C3 で RAG + Bedrock 評価、
-判定/返答案/根拠の追記を実装する。本文中の TODO を参照。
+C2: openpyxl で Excel の Q&A を抽出し、AI 判定列を追記して書き戻す。
+判定そのものは reviewer.review_answer（C2 はスタブ、C3 で RAG + Bedrock）。
 """
 from __future__ import annotations
 
-from services import job_store, s3_util
+from services import excel_io, job_store, reviewer, s3_util
 from services.ids import date_prefix
+
+XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+PROGRESS_EVERY = 5
 
 
 def lambda_handler(event: dict, _context=None) -> dict:
@@ -36,20 +36,24 @@ def _process(job: dict) -> None:
     job_id = job["job_id"]
     key_in = job["s3_key_in"]
 
-    # --- C1 ダミー: 入力 Excel をそのまま出力へコピー ---------------------
-    data = s3_util.get_bytes(key_in)
+    # 1. Excel を取得して Q&A 抽出
+    wb = excel_io.load_wb(s3_util.get_bytes(key_in))
+    parsed = excel_io.extract_qa(wb, layout=job.get("layout"))
+    if not parsed.rows:
+        raise ValueError("回答行が見つかりません。Excel フォーマット規約を確認してください。")
 
-    # TODO(C2): openpyxl で Q&A 抽出 → qa_rows
-    # TODO(C3): 各回答を RAG retrieve + Bedrock 評価 → 判定/返答案/根拠
-    # TODO(C2): 判定列/返答案列/根拠列を Excel に追記して書き戻し
-    job_store.update_progress(job_id, current=1, total=1)
+    # 2. 各回答を判定（C2 スタブ → C3 で RAG + Bedrock）
+    total = len(parsed.rows)
+    results = []
+    for i, row in enumerate(parsed.rows, start=1):
+        results.append(reviewer.review_answer(row))
+        if i % PROGRESS_EVERY == 0 or i == total:
+            job_store.update_progress(job_id, current=i, total=total)
 
+    # 3. 判定列を追記して書き戻し
+    excel_io.append_results(wb, parsed, results)
     key_out = f"reviews/outbound/{date_prefix()}/{job_id}_reviewed.xlsx"
-    s3_util.put_bytes(key_out, data, _content_type(key_in))
+    s3_util.put_bytes(key_out, excel_io.to_bytes(wb), XLSX_CONTENT_TYPE)
 
-    summary = {"approved": 0, "conditional": 0, "needs_review": 0, "rejected": 0, "note": "C1 dummy passthrough"}
-    job_store.complete_job(job_id, s3_key_out=key_out, summary=summary)
-
-
-def _content_type(_key: str) -> str:
-    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    # 4. ジョブ完了
+    job_store.complete_job(job_id, s3_key_out=key_out, summary=reviewer.summarize(results))

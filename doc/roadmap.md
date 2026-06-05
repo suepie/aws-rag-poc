@@ -44,7 +44,7 @@
 - [x] Terraform 最小構成（network + apigw-rest + lambda + dynamodb + s3）
 - [x] 確認支援 C1（REST + presigned + ジョブ + ダミー Worker）の実装
 - [x] Excel フォーマット規約のサンプル Excel を 1 枚用意（[doc/samples/](samples/)）
+- [x] **C2**: openpyxl で Excel の Q&A 抽出 → 判定列を追記して書き戻し（判定は reviewer スタブ）
 - [ ] AWS にデプロイして疎通（`make build-lambda` → `make tf-apply` → `make sn-test`）
 - [ ] ServiceNow 連携の認証・Flow を実テナントで PoC
-- [ ] **C2**: openpyxl で Excel の Q&A 抽出 → 判定列を追記して書き戻し
-- [ ] **C3**: RAG（fulltext）+ Bedrock（Claude）で判定/返答案/根拠を生成
+- [ ] **C3**: RAG（fulltext）+ Bedrock（Claude）で `reviewer.review_answer` を実装（判定/返答案/根拠）
