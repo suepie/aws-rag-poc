@@ -1,0 +1,48 @@
+# Secrets / credentials
+.env
+.env.*
+*.tfvars
+!*.tfvars.example
+credentials
+*.pem
+*.key
+api-key*
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+crash.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.zip
+
+# Node / frontend
+node_modules/
+frontend/dist/
+.vite/
+*.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Excel work files (申請書サンプル除く)
+*.xlsx
+!doc/**/sample*.xlsx
+~$*.xlsx
+
+# Logs
+*.log
