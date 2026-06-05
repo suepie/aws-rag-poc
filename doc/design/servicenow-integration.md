@@ -116,21 +116,62 @@ flowchart TD
 
 > ポーリングは ServiceNow の Flow（Wait for condition / スケジュール）で実装する。AWS からの**コールバック（AWS → ServiceNow REST）** も代替案として可能だが、認証経路が増えるため POC ではポーリングを採用（[ADR-003](../adr/003-async-processing.md) 参照）。
 
-## 5. Excel フォーマット規約
+## 5. ポーリングの仕組み
+
+**ServiceNow は AWS の内部リソース（DynamoDB / S3）を直接参照しない。** 触れるのは API Gateway（REST + `x-api-key`）だけで、ジョブの完了確認は `GET /v1/reviews/{job_id}` を一定間隔で繰り返すことで行う。
+
+```mermaid
+sequenceDiagram
+    participant SN as ServiceNow (Flow)
+    participant GW as API Gateway (REST)
+    participant API as API Lambda
+    participant DDB as DynamoDB
+
+    Note over SN: POST /v1/reviews で job_id 取得済み
+    loop status == completed まで（間隔 5〜15秒・最大回数/タイムアウトを設定）
+        SN->>GW: GET /v1/reviews/{job_id} (x-api-key)
+        GW->>GW: APIキー検証（Usage Plan）
+        GW->>API: プロキシ起動
+        API->>DDB: GetItem(job_id)  ← Lambda の IAM ロールで読む
+        DDB-->>API: ジョブ項目
+        API-->>SN: {status, progress|summary}
+    end
+    SN->>GW: GET /v1/reviews/{job_id}/result
+    GW->>API: 〃
+    API-->>SN: {download_url}（S3 presigned GET）
+```
+
+### なぜ DynamoDB を直接見られない（見せない）のか
+
+- DynamoDB の API は **AWS SigV4 署名（IAM 認証）が必須**で、「APIキー付きの公開 REST」のようなアクセス経路を持たない。ServiceNow から直接叩く方法は通常ない。
+- 仮に IAM 認証情報を ServiceNow に配るのは権限分離・運用（ローテーション・最小権限）の観点で不可。
+- よって **REST API（API Gateway + API Lambda）をファサード**にし、DynamoDB はサーバ側（Lambda の IAM ロール）でのみ読む。ServiceNow には `status` 等の必要項目だけを返す。
+
+### ポーリングの実装・コスト
+
+- `GET` は DynamoDB の GetItem 1 回だけで即応答（API Gateway の 29 秒制限には当たらない）。各ポーリングは独立・安価。
+- ServiceNow 側は Flow Designer の「Do … Until」ループ + Wait（待機）か、Scheduled Flow で実装。最大試行回数・全体タイムアウトを必ず設定する。
+- ジョブの `ttl`（7日）は処理中には影響しない（完了後の自動清掃用）。
+
+### 代替案: コールバック（push）— 現状は不採用
+
+完了時に **AWS → ServiceNow** の Inbound REST（Table API / Scripted REST API）を叩いて通知する方式も可能。リアルタイム性は高いが、AWS→ServiceNow 方向の受け口と認証情報を AWS 側に持たせる必要があり経路が増える。POC ではポーリングを採用（[ADR-001](../adr/001-servicenow-integration-pattern.md) / [ADR-003](../adr/003-async-processing.md)）。将来オプション。
+
+## 6. Excel フォーマット規約
 
 確認支援が機能するため、Excel に最低限の構造規約を設ける。詳細は [confirmation-assistance.md](confirmation-assistance.md#excel-フォーマット規約)。
 
 - 質問 ID 列・質問文列・回答列が機械的に特定できること（ヘッダ行 or 設定で指定）。
 - AI が追記する列（判定 / 返答案 / 根拠 / 参照）は出力時に付与し、入力時には不要。
 
-## 6. セキュリティ留意点
+## 7. セキュリティ留意点
 
 - ServiceNow が送る Excel には**個人情報・社外秘**が含まれうる。RAG/Bedrock 投入前に **PII フィルタ**を必ず通す（漢字氏名・メール・電話・マイナンバー・AWS キー等）。
 - presigned URL は短命（15 分）・1 回利用想定。S3 はバケットポリシーで直接公開しない。
 - APIキーは Secrets Manager 管理、ローテーション手順を用意。
 - CloudWatch Logs に Excel 本文・PII を出力しない（redact）。
 
-## 7. 関連
+## 8. 関連
 
 - [ADR-001 ServiceNow 連携パターン](../adr/001-servicenow-integration-pattern.md)
 - [ADR-002 Excel 受け渡し方式](../adr/002-excel-exchange-method.md)

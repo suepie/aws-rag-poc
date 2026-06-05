@@ -7,8 +7,8 @@ locals {
   azs  = slice(data.aws_availability_zones.available.names, 0, length(var.private_subnet_cidrs))
 }
 
-# ネットワーク（VPC + プライベートサブネット + ゲートウェイエンドポイント）
-# C1 では Lambda を VPC 外で動かすため未アタッチ。Aurora 導入時に利用する。
+# ネットワーク（VPC + プライベートサブネット）。Aurora 専用（Phase 2）。
+# Lambda は API / Worker とも VPC 外（ADR-007）。ここに Lambda はアタッチしない。
 module "network" {
   source               = "./modules/network"
   name                 = local.name

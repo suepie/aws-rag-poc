@@ -22,6 +22,7 @@
 | [ServiceNow 連携設計](doc/design/servicenow-integration.md) | REST I/F・APIキー・Excel 受け渡し |
 | [確認支援設計](doc/design/confirmation-assistance.md) | 最優先機能の詳細 |
 | [RAG アーキテクチャ](doc/design/rag-architecture.md) | データ源・retrieval 戦略・corpus2skill |
+| [データモデル](doc/design/data-model.md) | DynamoDB / Aurora / S3 に入るデータ |
 | [入力支援設計](doc/design/input-assistance.md) | SPA（後続） |
 | [AI チューニング設計](doc/design/admin-tuning.md) | 管理画面（後続） |
 | [フロントエンド設計](doc/design/frontend-architecture.md) | レイヤー・Container/Presentation・状態管理 |

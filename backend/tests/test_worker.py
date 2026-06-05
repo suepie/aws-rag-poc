@@ -22,11 +22,13 @@ def _sample_bytes():
 
 @pytest.fixture
 def worker(monkeypatch):
-    import services.s3_util as s3_util
-    import services.job_store as job_store
     import handlers.worker as worker_mod
+    import services.job_store as job_store
+    import services.s3_util as s3_util
 
     store = {"out": None, "completed": None, "progress": []}
+
+    import services.reviewer as reviewer
 
     monkeypatch.setattr(s3_util, "get_bytes", lambda key: _sample_bytes())
     monkeypatch.setattr(s3_util, "put_bytes", lambda key, data, ct: store.__setitem__("out", (key, data)))
@@ -34,6 +36,13 @@ def worker(monkeypatch):
     monkeypatch.setattr(job_store, "complete_job", lambda jid, **kw: store.__setitem__("completed", kw))
     monkeypatch.setattr(job_store, "fail_job", lambda jid, err: store.__setitem__("failed", err))
     monkeypatch.setattr(job_store, "get_job", lambda jid: {"job_id": jid, "s3_key_in": "reviews/inbound/x.xlsx"})
+
+    # Bedrock を呼ばないよう Reviewer をフェイク化（Excel 往復に集中）
+    class _FakeReviewer:
+        def review(self, row):
+            return reviewer.Verdict("needs_review", "返答案", "根拠", "low", [])
+
+    monkeypatch.setattr(reviewer, "build", lambda **kw: _FakeReviewer())
     return worker_mod, store
 
 

@@ -74,7 +74,10 @@ def test_header_on_second_row():
 def test_append_results_round_trip():
     wb = _wb(["質問ID", "質問", "回答"], [["Q-1", "q1", "a1"], ["Q-2", "q2", "a2"]])
     parsed = excel_io.extract_qa(wb)
-    results = [reviewer.review_answer(r) for r in parsed.rows]
+    results = [
+        reviewer.Verdict("needs_review", "返答案", "根拠", "low", ["ref-a"]),
+        reviewer.Verdict("approved", "OK", "問題なし", "high", []),
+    ]
     excel_io.append_results(wb, parsed, results)
 
     # bytes 化して再読込（保存往復を検証）

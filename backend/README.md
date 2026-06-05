@@ -53,5 +53,22 @@ Lambda ハンドラは `handlers.api.lambda_handler` / `handlers.worker.lambda_h
 - **C1（済）**: REST + presigned + ジョブ管理。
 - **C2（済）**: Worker が openpyxl で Q&A 抽出 → AI 列（判定/返答案/根拠/参照/信頼度）を右側に追記して書き戻し。
   - `services/excel_io.py`: ヘッダ別名での列特定・空行スキップ・追記。
-  - `services/reviewer.py`: `review_answer()` は **C2 スタブ**（全件「要確認」）。インターフェースは C3 でも維持。
-- **C3（次）**: `reviewer.review_answer` を RAG（fulltext）+ Bedrock（Claude）で実装。
+- **C3（済）**: `reviewer.Reviewer.review` を RAG（fulltext）+ Bedrock（Claude）で実装。
+  - `services/providers/`: Provider パターン（`claude_bedrock` / `get_provider`）。
+  - `services/retrieval/`: RetrievalStrategy（`none` / `fulltext`）。`get_strategy` で切替。
+  - `services/reference_store.py`: fulltext の **インメモリ seed**（Phase 2 で Aurora FULLTEXT に置換）。
+  - `services/prompt.py` / `postprocess.py` / `pii_filter.py`: プロンプト構築・JSON 正規化・PII マスク。
+
+### モデル/戦略の選択（環境変数）
+
+| 変数 | 既定 |
+|---|---|
+| `DEFAULT_MODEL_ID` | `claude-sonnet-4-6` |
+| `DEFAULT_RETRIEVAL_STRATEGY_ID` | `fulltext` |
+| `CLAUDE_BEDROCK_REGION` | `ap-northeast-1` |
+| `CLAUDE_BEDROCK_MODEL_ID` | `jp.anthropic.claude-sonnet-4-6` |
+
+ジョブ単位では `POST /v1/reviews` の `options.model_id` / `options.retrieval_strategy_id` で上書き可能。
+
+> Bedrock を実呼び出しするには、対象リージョンで Claude Sonnet 4.6 の **モデルアクセス有効化**が必要。
+> テストは Provider をフェイク化するため AWS 不要。

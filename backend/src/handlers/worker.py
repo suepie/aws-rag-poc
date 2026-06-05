@@ -42,11 +42,12 @@ def _process(job: dict) -> None:
     if not parsed.rows:
         raise ValueError("回答行が見つかりません。Excel フォーマット規約を確認してください。")
 
-    # 2. 各回答を判定（C2 スタブ → C3 で RAG + Bedrock）
+    # 2. 各回答を判定（RAG fulltext + Bedrock Claude）
+    rv = reviewer.build(model_id=job.get("model_id"), strategy_id=job.get("retrieval_strategy_id"))
     total = len(parsed.rows)
     results = []
     for i, row in enumerate(parsed.rows, start=1):
-        results.append(reviewer.review_answer(row))
+        results.append(rv.review(row))
         if i % PROGRESS_EVERY == 0 or i == total:
             job_store.update_progress(job_id, current=i, total=total)
 

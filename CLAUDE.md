@@ -29,9 +29,9 @@
 ## 技術スタック（application-form-poc の設計を踏襲、コードは新規）
 
 - **フロントエンド**: React + TypeScript + Vite（CloudFront + S3）
-- **バックエンド**: AWS Lambda (Python 3.12)
-  - API Lambda（VPC内）: REST 受付・ジョブ管理・CRUD
-  - Worker Lambda（VPC外）: Excel 解析・RAG・Bedrock 分析（非同期）
+- **バックエンド**: AWS Lambda (Python 3.12) — **API / Worker とも VPC 外**（[ADR-007](doc/adr/007-lambda-outside-vpc.md)）
+  - API Lambda: REST 受付・ジョブ管理・CRUD
+  - Worker Lambda: Excel 解析・RAG・Bedrock 分析（非同期）
 - **データ**: Aurora Serverless v2 (MySQL 8.0) + DynamoDB（非同期ジョブ）
 - **RAG**: 参考情報 / 過去事例 / 合成事例 を統合、retrieval 戦略を切替（fulltext / Bedrock KB / corpus2skill / hybrid）
 - **LLM**: Amazon Bedrock（Claude Sonnet 4.6 を主軸。Provider パターンで切替可）
@@ -48,6 +48,7 @@
 | [ServiceNow 連携設計](doc/design/servicenow-integration.md) | REST I/F・APIキー認証・Excel 受け渡し・ジョブ |
 | [確認支援設計](doc/design/confirmation-assistance.md) | 最優先機能の詳細設計 |
 | [RAG アーキテクチャ](doc/design/rag-architecture.md) | 3 データ源・retrieval 戦略・corpus2skill |
+| [データモデル](doc/design/data-model.md) | DynamoDB / Aurora / S3 に入るデータ |
 | [入力支援設計](doc/design/input-assistance.md) | SPA・Excel 解析・回答案提示（後続フェーズ） |
 | [AI チューニング設計](doc/design/admin-tuning.md) | RAG/corpus2skill 編集・精度比較（後続フェーズ） |
 | [フロントエンド設計](doc/design/frontend-architecture.md) | レイヤー・Container/Presentation・状態管理・モックファースト |
@@ -57,7 +58,7 @@
 ## 開発ルール
 
 - バックエンドは Python 3.12、Lambda ハンドラー形式
-- DB 接続: API Lambda は pymysql (TCP)、Worker Lambda は Data API (HTTPS)
+- DB 接続: API / Worker とも Aurora **Data API (HTTPS)**（VPC 外から接続。Phase 2 で導入）
 - Linter: ruff（バックエンド）、ESLint（フロントエンド）
 - インフラ変更は Terraform モジュール単位で管理
 - 機密情報（.env, .tfvars, credentials, APIキー）はコミットしない

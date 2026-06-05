@@ -49,6 +49,8 @@ flowchart TB
 | `corpus2skill` | 階層ナビゲート（SKILL.md ツリー + Claude tool use） | 1〜2秒 | navigate ~$0.05-0.10/query | 説明可能・vector DB 不要 |
 | `hybrid` | bedrock_kb + corpus2skill を RRF 統合 | 3〜8秒 | 上記合算 | 両者の長所 |
 
+> **実装状況（C3 時点）**: `none` と `fulltext` を実装済み。ただし `fulltext` は Aurora 未導入のため**インメモリ seed コーパス**（[`reference_store.py`](../../backend/src/services/reference_store.py)）に対する substring 一致で代替している。Phase 2 で Aurora `references_master` の FULLTEXT に置き換える（`strategy_id` は不変）。`bedrock_kb` / `corpus2skill` / `hybrid` は未実装。
+
 ```python
 @dataclass
 class RetrievalQuery:

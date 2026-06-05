@@ -44,7 +44,13 @@
 - [x] Terraform 最小構成（network + apigw-rest + lambda + dynamodb + s3）
 - [x] 確認支援 C1（REST + presigned + ジョブ + ダミー Worker）の実装
 - [x] Excel フォーマット規約のサンプル Excel を 1 枚用意（[doc/samples/](samples/)）
-- [x] **C2**: openpyxl で Excel の Q&A 抽出 → 判定列を追記して書き戻し（判定は reviewer スタブ）
-- [ ] AWS にデプロイして疎通（`make build-lambda` → `make tf-apply` → `make sn-test`）
+- [x] **C2**: openpyxl で Excel の Q&A 抽出 → 判定列を追記して書き戻し
+- [x] **C3**: RAG（fulltext / インメモリ seed）+ Bedrock（Claude）で `Reviewer.review` を実装（判定/返答案/根拠）+ Provider/Retrieval 抽象
+- [ ] AWS にデプロイして疎通（`make build-lambda` → `make tf-apply` → Bedrock モデルアクセス有効化 → `make sn-test`）
 - [ ] ServiceNow 連携の認証・Flow を実テナントで PoC
-- [ ] **C3**: RAG（fulltext）+ Bedrock（Claude）で `reviewer.review_answer` を実装（判定/返答案/根拠）
+- [ ] **Phase 2**: Aurora 導入 → `fulltext` を Aurora FULLTEXT に置換 + 参考情報/合成事例スキーマ
+- [ ] **C4 強化**: PII フィルタの拡充・Excel 規約逸脱時のエラー詳細化
+- [ ] **C5**: retrieval 戦略 bedrock_kb / corpus2skill / hybrid の追加
+- [ ] **Web 取り込み**（[ADR-008](adr/008-web-research-ingestion.md)）: ベストプラクティスを Web から自動収集 → Claude 要約 → admin 承認 → 参考情報化。実行時検索はフォールバック限定
+  - Phase 2: バッチ取り込み（検索API or Bedrock KB Web Crawler）を admin の参考情報投入に追加
+  - Phase 4: 実行時フォールバック検索（出典付き・低信頼度）+ 外部送信点のセキュリティ整理

@@ -14,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 def api(monkeypatch):
     """boto3 依存をモックして handlers.api をロード。"""
     # services モジュールの boto3 クライアントを差し替え
-    import services.s3_util as s3_util
-    import services.job_store as job_store
     import handlers.api as api_mod
+    import services.job_store as job_store
+    import services.s3_util as s3_util
 
     monkeypatch.setattr(s3_util, "presign_put", lambda k, ct: f"https://put/{k}")
     monkeypatch.setattr(s3_util, "presign_get", lambda k: f"https://get/{k}")

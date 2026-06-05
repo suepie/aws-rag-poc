@@ -63,7 +63,7 @@ flowchart TB
         CF[CloudFront + S3<br/>入力支援SPA / AIチューニング画面]
         CF --> GWH
 
-        APILAMBDA[Lambda API VPC内<br/>ジョブ作成 / 状態管理 / CRUD]
+        APILAMBDA[Lambda API VPC外<br/>ジョブ作成 / 状態管理 / CRUD]
         GWR --> APILAMBDA
         GWH --> APILAMBDA
 

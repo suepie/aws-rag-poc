@@ -101,6 +101,11 @@ data "aws_iam_policy_document" "worker" {
     actions   = ["s3:GetObject", "s3:PutObject"]
     resources = ["${var.excel_bucket_arn}/*"]
   }
+  statement {
+    sid       = "Bedrock"
+    actions   = ["bedrock:InvokeModel", "bedrock:Converse"]
+    resources = ["*"] # POC。本番では Claude モデル + Inference Profile の ARN に限定する。
+  }
 }
 
 resource "aws_iam_role_policy" "worker" {
@@ -126,9 +131,13 @@ resource "aws_lambda_function" "worker" {
 
   environment {
     variables = {
-      JOBS_TABLE   = var.jobs_table_name
-      EXCEL_BUCKET = var.excel_bucket
-      JOB_TTL_DAYS = tostring(var.job_ttl_days)
+      JOBS_TABLE                    = var.jobs_table_name
+      EXCEL_BUCKET                  = var.excel_bucket
+      JOB_TTL_DAYS                  = tostring(var.job_ttl_days)
+      DEFAULT_MODEL_ID              = var.default_model_id
+      DEFAULT_RETRIEVAL_STRATEGY_ID = var.default_retrieval_strategy_id
+      CLAUDE_BEDROCK_REGION         = var.claude_bedrock_region
+      CLAUDE_BEDROCK_MODEL_ID       = var.claude_bedrock_model_id
     }
   }
 }
