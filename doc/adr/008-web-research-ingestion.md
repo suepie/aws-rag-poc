@@ -14,9 +14,11 @@ proposed
    - 確認支援・入力支援の**実行時は DB（RAG）を引くだけ**で、Web へは出ない。再現性・レイテンシ・コスト・監査の面で有利。
 2. **実行時の動的 Web 検索はフォールバック限定。**
    - 「DB にヒットが無い」「時事性が高いキーワード」のときだけ補完検索し、**出典付き・`confidence: low`** で提示。結果は後で admin がナレッジ化する。
-3. **実装は 2 系統を候補とし、[調査結果](../research/web-search-options.md) を踏まえて選定する。**
-   - (A) 検索 API（Tavily / Brave / Exa 等）+ 本文抽出 + Claude 要約（柔軟・母体実績あり）
-   - (B) **Amazon Bedrock Knowledge Bases の Web Crawler データソース**（信頼ソースの URL を登録 → 自動クロール → KB 化。マネージドで運用が軽く、`bedrock_kb` 戦略（C5）と直結）
+3. **実装は次の優先で選定する**（[調査結果](../research/web-search-options.md) に基づく）。
+   - **第一候補（権威ソースのバッチ取り込み）= Amazon Bedrock KB Web Crawler。** AWS マネージドで**自社データを外部に出さず**公開ページを取得し KB 化、`bedrock_kb` 戦略（C5）と直結。導入前に **preview 状況・ap-northeast-1 提供可否・OpenSearch Serverless コスト（~$170-200/月〜）** を検証する。
+   - **第二候補（任意 URL/キーワード取り込み + 要約）= Tavily（Search + Extract）** を admin 承認パイプラインに接続（AI/RAG 特化・母体実績）。代替に Exa。
+   - **実行時フォールバック検索 = Brave（$5/1k）または Tavily basic。** キーワードのみ・出典付き・`confidence: low`。
+   - **判定 LLM 内蔵の Web 検索（Anthropic web_search ツール）は採用しない。** 本システムは Bedrock Converse 経由で、**web_search は Bedrock 非対応**（Claude API / Claude Platform on AWS / Foundry のみ）。将来 LLM をそちらへ寄せる場合に再検討。
 
 ## 検討した代替案
 - **実行時に毎回 Web 検索**: 鮮度は最高だが、非決定性（同じ申請で結果が変わる）・レイテンシ増・コスト増・リスク増。→ フォールバックに限定。
